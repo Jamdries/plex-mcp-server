@@ -1,0 +1,53 @@
+"""
+Example demonstrating Read-Only Mode in Plex MCP Server
+"""
+
+# Example 1: Default behavior (READ_ONLY_MODE=true)
+# When attempting a write operation:
+
+# Request:
+{
+    "method": "media_delete",
+    "params": {
+        "media_title": "Some Movie"
+    }
+}
+
+# Response:
+{
+    "error": "Operation 'media_delete' is not allowed in read-only mode. Set READ_ONLY_MODE=false in your environment to enable write operations."
+}
+
+# Example 2: Read operations always work
+# Request:
+{
+    "method": "media_search",
+    "params": {
+        "query": "Star Wars"
+    }
+}
+
+# Response: (successful - returns search results)
+{
+    "results": [...],
+    "count": 10
+}
+
+# Example 3: Enabling write operations
+# Set in .env file:
+# READ_ONLY_MODE=false
+
+# Now write operations work:
+{
+    "method": "media_delete",
+    "params": {
+        "media_title": "Some Movie"
+    }
+}
+
+# Response: (successful)
+{
+    "success": true,
+    "message": "Media 'Some Movie' deleted successfully"
+}
+

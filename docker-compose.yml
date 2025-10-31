@@ -13,6 +13,8 @@ services:
       - PLEX_URL=${PLEX_URL:-http://host.docker.internal:32400}
       - PLEX_TOKEN=${PLEX_TOKEN}
       - PLEX_USERNAME=${PLEX_USERNAME:-}
+      # Read-only mode (default: true) - Set to false to enable write operations
+      - READ_ONLY_MODE=${READ_ONLY_MODE:-true}
     # Uncomment to use .env file for environment variables
     # env_file:
     #   - .env

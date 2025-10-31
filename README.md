@@ -98,6 +98,66 @@ When the server is running in SSE mode, configure your client to connect using:
 
 With SSE, you can connect to the server via web applications or tools that support SSE connections.
 
+## Read-Only Mode 🔒
+
+**By default, the server runs in read-only mode** to protect your Plex server from unintended modifications. This is especially useful when:
+- Testing the server for the first time
+- Integrating with AI agents or untrusted applications
+- Providing safe access to Plex information without modification risks
+- Running in production environments where changes should be controlled
+
+### How It Works
+
+When read-only mode is enabled, all write operations are blocked:
+- ❌ Library scans and refreshes
+- ❌ Media editing and deletion
+- ❌ Playlist/collection creation and modification  
+- ❌ Playback control
+- ❌ Server maintenance tasks
+- ✅ All read operations (searching, listing, viewing) remain available
+
+If a write operation is attempted, you'll receive an error:
+```json
+{
+  "error": "Operation 'media_delete' is not allowed in read-only mode. Set READ_ONLY_MODE=false in your environment to enable write operations."
+}
+```
+
+### Enabling Write Operations
+
+To allow modifications to your Plex server, set the `READ_ONLY_MODE` environment variable to `false`:
+
+**Option 1: Environment Variable**
+```bash
+export READ_ONLY_MODE=false
+python3 plex_mcp_server.py
+```
+
+**Option 2: .env File**
+Add to your `.env` file:
+```
+READ_ONLY_MODE=false
+```
+
+**Option 3: Docker Compose**
+In your `docker-compose.yml`:
+```yaml
+environment:
+  - READ_ONLY_MODE=false
+```
+
+**Option 4: Docker Run**
+```bash
+docker run -e READ_ONLY_MODE=false plex-mcp-server
+```
+
+### Security Recommendations
+
+- ⚠️ Only disable read-only mode when necessary
+- 🔐 Keep it enabled for AI agents and automated systems
+- 📝 Use read-only mode for monitoring and reporting tools
+- 🎯 Disable only for trusted administrative tools
+
 ## Command Modules
 
 ### Library Module

@@ -1,0 +1,65 @@
+# Read-Only Mode - ENABLED BY DEFAULT
+
+## Overview
+The Plex MCP Server is now configured to run in read-only mode by default. All write operations are protected by the `@read_only_guard` decorator, which prevents any modifications to the Plex server.
+
+## Configuration
+- **Environment Variable**: `READ_ONLY_MODE` (default: `true`)
+- **To enable write operations**: Set `READ_ONLY_MODE=false` in your environment or `.env` file
+
+## Protected Operations
+
+### Library Operations (modules/library.py)
+✓ library_refresh - Refreshes library metadata
+✓ library_scan - Scans for new media files
+
+### Media Operations (modules/media.py)
+✓ media_edit_metadata - Edits media item metadata
+✓ media_delete - Deletes media items
+✓ media_set_artwork - Sets custom artwork
+
+### Playlist Operations (modules/playlist.py)
+✓ playlist_create - Creates new playlists
+✓ playlist_edit - Edits playlist details
+✓ playlist_delete - Deletes playlists
+✓ playlist_add_to - Adds items to playlists
+✓ playlist_remove_from - Removes items from playlists
+✓ playlist_upload_poster - Uploads custom playlist posters
+
+### Collection Operations (modules/collection.py)
+✓ collection_create - Creates new collections
+✓ collection_edit - Edits collection details
+✓ collection_delete - Deletes collections
+✓ collection_add_to - Adds items to collections
+✓ collection_remove_from - Removes items from collections
+
+### Client Operations (modules/client.py)
+✓ client_start_playback - Starts media playback
+✓ client_control_playback - Controls playback (play/pause/stop/seek)
+✓ client_navigate - Navigates client interface
+✓ client_set_streams - Sets audio/subtitle streams
+
+### Server Operations (modules/server.py)
+✓ server_run_butler_task - Runs maintenance tasks (backup, optimize, etc.)
+
+## Read-Only Operations (Always Available)
+All read operations remain available in read-only mode:
+- Library listing and browsing
+- Media searching and details
+- User information and history
+- Session monitoring
+- Server status and logs
+- Playlist and collection viewing
+
+## Error Message
+When a write operation is attempted in read-only mode, users will receive:
+```
+Operation '<function_name>' is not allowed in read-only mode. 
+Set READ_ONLY_MODE=false in your environment to enable write operations.
+```
+
+## Implementation Details
+- Decorator: `@read_only_guard` in `modules/__init__.py`
+- Applied to all write operations automatically
+- Checked before function execution
+- Default behavior: read-only enabled for safety

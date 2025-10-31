@@ -1,4 +1,4 @@
-from modules import mcp, connect_to_plex
+from modules import mcp, connect_to_plex, read_only_guard
 import os
 from typing import Dict, List, Any, Optional
 import json
@@ -357,6 +357,7 @@ async def server_get_alerts(timeout: int = 15) -> str:
         return json.dumps({"status": "error", "message": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def server_run_butler_task(task_name: str) -> str:
     """Manually run a specific Plex Butler task now.
     

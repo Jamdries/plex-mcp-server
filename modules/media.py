@@ -1,4 +1,4 @@
-from modules import mcp, connect_to_plex
+from modules import mcp, connect_to_plex, read_only_guard
 from typing import List
 from plexapi.exceptions import NotFound # type: ignore
 import base64
@@ -522,6 +522,7 @@ def get_media_details(media):
     return details
 
 @mcp.tool()
+@read_only_guard
 async def media_edit_metadata(media_title: str, library_name: str = None, 
                         new_title: str = None, new_summary: str = None, new_rating: float = None,
                         new_release_date: str = None,  # Add this parameter
@@ -842,6 +843,7 @@ async def media_get_artwork(media_title: str = None, media_id: int = None, libra
         return json.dumps({"error": f"Error getting images: {str(e)}"}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def media_delete(media_title: str = None, media_id: int = None, library_name: str = None) -> str:
     """Delete a media item from the Plex library.
     
@@ -1016,6 +1018,7 @@ async def media_delete(media_title: str = None, media_id: int = None, library_na
         return json.dumps({"error": f"Error deleting media: {str(e)}"}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def media_set_artwork(media_title: str, library_name: str = None,
                           art_type: str = "poster", 
                           filepath: str = None, url: str = None,

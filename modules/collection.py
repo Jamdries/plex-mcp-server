@@ -1,6 +1,6 @@
 from plexapi.collection import Collection # type: ignore
 from typing import List, Dict, Any
-from modules import mcp, connect_to_plex
+from modules import mcp, connect_to_plex, read_only_guard
 import os
 from plexapi.exceptions import NotFound, BadRequest  # type: ignore
 import json
@@ -93,6 +93,7 @@ async def collection_list(library_name: str = None) -> str:
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def collection_create(collection_title: str, library_name: str, item_titles: List[str] = None, item_ids: List[int] = None) -> str:
     """Create a new collection with specified items.
     
@@ -199,6 +200,7 @@ async def collection_create(collection_title: str, library_name: str, item_title
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def collection_add_to(collection_title: str = None, collection_id: int = None, library_name: str = None, item_titles: List[str] = None, item_ids: List[int] = None) -> str:
     """Add items to an existing collection.
     
@@ -389,6 +391,7 @@ async def collection_add_to(collection_title: str = None, collection_id: int = N
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def collection_remove_from(collection_title: str = None, collection_id: int = None, library_name: str = None, item_titles: List[str] = None) -> str:
     """Remove items from a collection.
     
@@ -517,6 +520,7 @@ async def collection_remove_from(collection_title: str = None, collection_id: in
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def collection_delete(collection_title: str = None, collection_id: int = None, library_name: str = None) -> str:
     """Delete a collection.
     
@@ -615,6 +619,7 @@ async def collection_delete(collection_title: str = None, collection_id: int = N
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def collection_edit(collection_title: str = None, collection_id: int = None, library_name: str = None, 
                       new_title: str = None, new_sort_title: str = None,
                       new_summary: str = None, new_content_rating: str = None,

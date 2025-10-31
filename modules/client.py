@@ -6,7 +6,7 @@ import json
 import time
 from typing import List, Dict, Optional, Union, Any
 
-from modules import mcp, connect_to_plex
+from modules import mcp, connect_to_plex, read_only_guard
 from plexapi.exceptions import NotFound, Unauthorized
 
 @mcp.tool()
@@ -385,6 +385,7 @@ async def client_get_active() -> str:
         })
 
 @mcp.tool()
+@read_only_guard
 async def client_start_playback(media_title: str, client_name: str = None, 
                         offset: int = 0, library_name: str = None, 
                         use_external_player: bool = False) -> str:
@@ -546,6 +547,7 @@ async def client_start_playback(media_title: str, client_name: str = None,
         })
 
 @mcp.tool()
+@read_only_guard
 async def client_control_playback(client_name: str, action: str, 
                          parameter: int = None, media_type: str = 'video') -> str:
     """Control playback on a specified client.
@@ -698,6 +700,7 @@ async def client_control_playback(client_name: str, action: str,
         })
 
 @mcp.tool()
+@read_only_guard
 async def client_navigate(client_name: str, action: str) -> str:
     """Navigate a Plex client interface.
     
@@ -781,6 +784,7 @@ async def client_navigate(client_name: str, action: str) -> str:
         })
 
 @mcp.tool()
+@read_only_guard
 async def client_set_streams(client_name: str, audio_stream_id: str = None, 
                     subtitle_stream_id: str = None, video_stream_id: str = None) -> str:
     """Set audio, subtitle, or video streams for current playback on a client.

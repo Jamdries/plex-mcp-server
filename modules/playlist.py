@@ -1,4 +1,4 @@
-from modules import mcp, connect_to_plex
+from modules import mcp, connect_to_plex, read_only_guard
 from typing import List
 from plexapi.playlist import Playlist # type: ignore
 from plexapi.exceptions import NotFound, BadRequest  # type: ignore
@@ -67,6 +67,7 @@ async def playlist_list(library_name: str = None, content_type: str = None) -> s
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def playlist_create(playlist_title: str, item_titles: List[str], library_name: str = None, summary: str = None) -> str:
     """Create a new playlist with specified items.
     
@@ -115,6 +116,7 @@ async def playlist_create(playlist_title: str, item_titles: List[str], library_n
         return json.dumps({"status": "error", "message": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def playlist_edit(playlist_title: str = None, playlist_id: int = None, new_title: str = None, new_summary: str = None) -> str:
     """Edit a playlist's details such as title and summary.
     
@@ -207,6 +209,7 @@ async def playlist_edit(playlist_title: str = None, playlist_id: int = None, new
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def playlist_upload_poster(playlist_title: str = None, playlist_id: int = None, poster_url: str = None, poster_filepath: str = None) -> str:
     """Upload a poster image for a playlist.
     
@@ -387,6 +390,7 @@ async def playlist_copy_to_user(playlist_title: str = None, playlist_id: int = N
         return json.dumps({"status": "error", "message": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def playlist_add_to(playlist_title: str = None, playlist_id: int = None, item_titles: List[str] = None, item_ids: List[int] = None) -> str:
     """Add items to a playlist.
     
@@ -539,6 +543,7 @@ async def playlist_add_to(playlist_title: str = None, playlist_id: int = None, i
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def playlist_remove_from(playlist_title: str = None, playlist_id: int = None, item_titles: List[str] = None) -> str:
     """Remove items from a playlist.
     
@@ -648,6 +653,7 @@ async def playlist_remove_from(playlist_title: str = None, playlist_id: int = No
         return json.dumps({"error": str(e)}, indent=4)
 
 @mcp.tool()
+@read_only_guard
 async def playlist_delete(playlist_title: str = None, playlist_id: int = None) -> str:
     """Delete a playlist.
     

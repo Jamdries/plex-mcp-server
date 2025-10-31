@@ -3,7 +3,7 @@ import requests
 import aiohttp
 import asyncio
 from plexapi.exceptions import NotFound # type: ignore
-from modules import mcp, connect_to_plex
+from modules import mcp, connect_to_plex, read_only_guard
 from urllib.parse import urljoin
 import time
 
@@ -288,6 +288,7 @@ async def library_get_stats(library_name: str) -> str:
         return json.dumps({"error": f"Error getting library stats: {str(e)}"})
 
 @mcp.tool()
+@read_only_guard
 async def library_refresh(library_name: str = None) -> str:
     """Refresh a specific library or all libraries.
     
@@ -322,6 +323,7 @@ async def library_refresh(library_name: str = None) -> str:
         return json.dumps({"error": f"Error refreshing library: {str(e)}"})
 
 @mcp.tool()
+@read_only_guard
 async def library_scan(library_name: str, path: str = None) -> str:
     """Scan a specific library or part of a library.
     

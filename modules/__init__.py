@@ -1,5 +1,6 @@
 import os
 import time
+from functools import wraps
 from mcp.server.fastmcp import FastMCP # type: ignore
 from plexapi.server import PlexServer # type: ignore
 from plexapi.myplex import MyPlexAccount # type: ignore
@@ -24,6 +25,21 @@ server = None
 last_connection_time = 0
 CONNECTION_TIMEOUT = 30  # seconds
 SESSION_TIMEOUT = 60 * 30  # 30 minutes
+
+# Read-only mode configuration
+READ_ONLY_MODE = os.environ.get("READ_ONLY_MODE", "true").lower() == "true"
+
+def read_only_guard(func):
+    """Decorator to prevent write operations when in read-only mode."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if READ_ONLY_MODE:
+            raise ValueError(
+                f"Operation '{func.__name__}' is not allowed in read-only mode. "
+                "Set READ_ONLY_MODE=false in your environment to enable write operations."
+            )
+        return func(*args, **kwargs)
+    return wrapper
 
 def connect_to_plex() -> PlexServer:
     """Connect to Plex server using environment variables or stored credentials.
