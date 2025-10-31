@@ -347,10 +347,18 @@ async def client_get_active() -> str:
                 if hasattr(session, 'viewOffset') and hasattr(session, 'duration') and session.duration:
                     progress = round((session.viewOffset / session.duration) * 100, 1)
                 
-                # Get user info
+                # Get user info - try multiple attributes
                 username = "Unknown User"
                 if hasattr(session, 'usernames') and session.usernames:
-                    username = session.usernames[0]
+                    username = session.usernames[0] if isinstance(session.usernames, list) else session.usernames
+                elif hasattr(session, 'username'):
+                    username = session.username
+                elif hasattr(session, 'user'):
+                    user_obj = session.user
+                    if hasattr(user_obj, 'title'):
+                        username = user_obj.title
+                    elif hasattr(user_obj, 'name'):
+                        username = user_obj.name
                 
                 # Get transcoding status
                 transcoding = False

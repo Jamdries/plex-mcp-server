@@ -37,12 +37,25 @@ async def sessions_get_active(unused: str = None) -> str:
             
             # Session information
             player = getattr(session, 'player', None)
-            user = getattr(session, 'usernames', ['Unknown User'])[0]
+            
+            # Get user information - try multiple attributes
+            user = 'Unknown User'
+            if hasattr(session, 'usernames') and session.usernames:
+                user = session.usernames[0] if isinstance(session.usernames, list) else session.usernames
+            elif hasattr(session, 'username'):
+                user = session.username
+            elif hasattr(session, 'user'):
+                # The user object might have a 'title' attribute
+                user_obj = session.user
+                if hasattr(user_obj, 'title'):
+                    user = user_obj.title
+                elif hasattr(user_obj, 'name'):
+                    user = user_obj.name
             
             session_info = {
                 "session_id": i,
-                "state": player.state,
-                "player_name": player.title,
+                "state": player.state if player else 'unknown',
+                "player_name": player.title if player else 'Unknown Player',
                 "user": user,
                 "content_type": item_type, 
                 "player": {},
@@ -292,25 +305,44 @@ async def sessions_get_media_playback_history(media_title: str = None, library_n
             for item in history_items:
                 history_entry = {}
                 
-                # Get the username if available
-                account_id = getattr(item, 'accountID', None)
+                # Get the username - try multiple attributes
                 account_name = "Unknown User"
                 
-                # Try to get the account name from the accountID
-                if account_id:
-                    try:
-                        # This may not work unless we have admin privileges
-                        account = plex.myPlexAccount()
-                        if account.id == account_id:
-                            account_name = account.title
-                        else:
-                            for user in account.users():
-                                if user.id == account_id:
-                                    account_name = user.title
-                                    break
-                    except:
-                        # If we can't get the account name, just use the ID
-                        account_name = f"User ID: {account_id}"
+                # Try direct username attributes first
+                if hasattr(item, 'username') and item.username:
+                    account_name = item.username
+                elif hasattr(item, 'accountName') and item.accountName:
+                    account_name = item.accountName
+                elif hasattr(item, 'user') and item.user:
+                    user_obj = item.user
+                    if hasattr(user_obj, 'title'):
+                        account_name = user_obj.title
+                    elif hasattr(user_obj, 'name'):
+                        account_name = user_obj.name
+                    elif hasattr(user_obj, 'username'):
+                        account_name = user_obj.username
+                else:
+                    # Fallback to accountID lookup
+                    account_id = getattr(item, 'accountID', None)
+                    if account_id:
+                        try:
+                            account = plex.myPlexAccount()
+                            # Check if it's the owner
+                            if hasattr(account, 'id') and account.id == account_id:
+                                account_name = account.title if hasattr(account, 'title') else account.username
+                            else:
+                                # Check shared users
+                                for user in account.users():
+                                    if hasattr(user, 'id') and user.id == account_id:
+                                        account_name = user.title if hasattr(user, 'title') else user.username
+                                        break
+                                    # Also try matching by other ID fields
+                                    elif hasattr(user, 'accountID') and user.accountID == account_id:
+                                        account_name = user.title if hasattr(user, 'title') else user.username
+                                        break
+                        except Exception as e:
+                            # If we can't get the account name, just use the ID
+                            account_name = f"User ID: {account_id}"
                 
                 history_entry["user"] = account_name
                 
