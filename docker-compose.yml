@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  plex-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: plex-mcp-server
+    ports:
+      - "3001:3001"
+    environment:
+      # Set your Plex server URL and token here or use .env file
+      - PLEX_URL=${PLEX_URL:-http://host.docker.internal:32400}
+      - PLEX_TOKEN=${PLEX_TOKEN}
+      - PLEX_USERNAME=${PLEX_USERNAME:-}
+    # Uncomment to use .env file for environment variables
+    # env_file:
+    #   - .env
+    restart: unless-stopped
+    networks:
+      - plex-network
+    # Optional: Add healthcheck
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:3001/sse', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  plex-network:
+    driver: bridge
