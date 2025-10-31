@@ -2,6 +2,7 @@ import argparse
 import uvicorn # type: ignore
 from starlette.applications import Starlette # type: ignore
 from starlette.routing import Mount, Route # type: ignore
+from starlette.responses import Response # type: ignore
 from mcp.server import Server # type: ignore
 from mcp.server.sse import SseServerTransport # type: ignore
 from starlette.requests import Request # type: ignore
@@ -89,7 +90,7 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
     """Create a Starlette application that can serve the provided mcp server with SSE."""
     sse = SseServerTransport("/messages/")
 
-    async def handle_sse(request: Request) -> None:
+    async def handle_sse(request: Request) -> Response:
         async with sse.connect_sse(
             request.scope,
             request.receive,
@@ -100,6 +101,7 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
                 write_stream,
                 mcp_server.create_initialization_options(),
             )
+        return Response()
 
     return Starlette(
         debug=debug,
