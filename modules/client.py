@@ -309,10 +309,13 @@ async def client_get_active() -> str:
     """
     try:
         plex = connect_to_plex()
-        
+
+        # Get account information to determine owner
+        account = plex.myPlexAccount()
+
         # Get all sessions
         sessions = plex.sessions()
-        
+
         if not sessions:
             return json.dumps({
                 "status": "success",
@@ -320,19 +323,19 @@ async def client_get_active() -> str:
                 "count": 0,
                 "active_clients": []
             })
-        
+
         active_clients = []
-        
+
         for session in sessions:
             if hasattr(session, 'player') and session.player:
                 player = session.player
-                
+
                 # Get media information
                 media_info = {
                     "title": session.title if hasattr(session, 'title') else "Unknown",
                     "type": session.type if hasattr(session, 'type') else "Unknown",
                 }
-                
+
                 # Add additional info based on media type
                 if hasattr(session, 'type'):
                     if session.type == 'episode':
@@ -341,12 +344,12 @@ async def client_get_active() -> str:
                         media_info["seasonEpisode"] = f"S{getattr(session, 'parentIndex', '?')}E{getattr(session, 'index', '?')}"
                     elif session.type == 'movie':
                         media_info["year"] = getattr(session, 'year', 'Unknown')
-                
+
                 # Calculate progress if possible
                 progress = None
                 if hasattr(session, 'viewOffset') and hasattr(session, 'duration') and session.duration:
                     progress = round((session.viewOffset / session.duration) * 100, 1)
-                
+
                 # Get user info - try multiple attributes
                 username = "Unknown User"
                 if hasattr(session, 'usernames') and session.usernames:
@@ -359,12 +362,22 @@ async def client_get_active() -> str:
                         username = user_obj.title
                     elif hasattr(user_obj, 'name'):
                         username = user_obj.name
-                
+
+                # Determine if this is the owner or a shared user
+                is_owner = False
+                if username != 'Unknown User':
+                    # Compare with owner's username and title
+                    if (username.lower() == account.username.lower() or
+                        username.lower() == account.title.lower()):
+                        is_owner = True
+
+                user_role = "Owner" if is_owner else "Shared User"
+
                 # Get transcoding status
                 transcoding = False
                 if hasattr(session, 'transcodeSessions') and session.transcodeSessions:
                     transcoding = True
-                
+
                 client_info = {
                     "name": player.title,
                     "device": getattr(player, 'device', 'Unknown'),
@@ -372,11 +385,12 @@ async def client_get_active() -> str:
                     "platform": getattr(player, 'platform', 'Unknown'),
                     "state": getattr(player, 'state', 'Unknown'),
                     "user": username,
+                    "user_role": user_role,
                     "media": media_info,
                     "progress": progress,
                     "transcoding": transcoding
                 }
-                
+
                 active_clients.append(client_info)
         
         return json.dumps({
