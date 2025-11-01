@@ -310,10 +310,11 @@ async def user_get_watch_history(username: str = PLEX_USERNAME, limit: int = 10,
         
         while len(filtered_items) < limit and attempt < max_attempts:
             attempt += 1
-            
+
             # For the main account owner
             if username.lower() == account.username.lower():
-                history_items = plex.history(maxresults=current_search_limit)
+                # Filter by owner's account ID to get only their watch history
+                history_items = plex.history(maxresults=current_search_limit, accountID=account.id)
             else:
                 # For a different user, find them in shared users
                 target_user = None
@@ -321,10 +322,10 @@ async def user_get_watch_history(username: str = PLEX_USERNAME, limit: int = 10,
                     if user.username.lower() == username.lower() or user.title.lower() == username.lower():
                         target_user = user
                         break
-                
+
                 if not target_user:
                     return json.dumps({"error": f"User '{username}' not found."})
-                
+
                 # For a shared user, use accountID to filter history
                 history_items = plex.history(maxresults=current_search_limit, accountID=target_user.id)
             
