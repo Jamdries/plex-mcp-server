@@ -12,10 +12,13 @@ async def sessions_get_active(unused: str = None) -> str:
     """
     try:
         plex = connect_to_plex()
-        
+
+        # Get account information to determine owner
+        account = plex.myPlexAccount()
+
         # Get all active sessions
         sessions = plex.sessions()
-        
+
         if not sessions:
             return json.dumps({
                 "status": "success",
@@ -23,21 +26,21 @@ async def sessions_get_active(unused: str = None) -> str:
                 "sessions_count": 0,
                 "sessions": []
             })
-        
+
         sessions_data = []
         transcode_count = 0
         direct_play_count = 0
         total_bitrate = 0
-        
+
         for session in enumerate(sessions, 1):
             i, session = session
             # Basic media information
             item_type = getattr(session, 'type', 'unknown')
             title = getattr(session, 'title', 'Unknown')
-            
+
             # Session information
             player = getattr(session, 'player', None)
-            
+
             # Get user information - try multiple attributes
             user = 'Unknown User'
             if hasattr(session, 'usernames') and session.usernames:
@@ -51,13 +54,24 @@ async def sessions_get_active(unused: str = None) -> str:
                     user = user_obj.title
                 elif hasattr(user_obj, 'name'):
                     user = user_obj.name
-            
+
+            # Determine if this is the owner or a shared user
+            is_owner = False
+            if user != 'Unknown User':
+                # Compare with owner's username and title
+                if (user.lower() == account.username.lower() or
+                    user.lower() == account.title.lower()):
+                    is_owner = True
+
+            user_role = "Owner" if is_owner else "Shared User"
+
             session_info = {
                 "session_id": i,
                 "state": player.state if player else 'unknown',
                 "player_name": player.title if player else 'Unknown Player',
                 "user": user,
-                "content_type": item_type, 
+                "user_role": user_role,
+                "content_type": item_type,
                 "player": {},
                 "progress": {}
             }
@@ -300,14 +314,18 @@ async def sessions_get_media_playback_history(media_title: str = None, library_n
                     "history": []
                 })
             
+            # Get account information to determine owner
+            account = plex.myPlexAccount()
+
             history_data = []
-            
+
             for item in history_items:
                 history_entry = {}
-                
+
                 # Get the username - try multiple attributes
                 account_name = "Unknown User"
-                
+                is_owner_user = False
+
                 # Try direct username attributes first
                 if hasattr(item, 'username') and item.username:
                     account_name = item.username
@@ -326,10 +344,10 @@ async def sessions_get_media_playback_history(media_title: str = None, library_n
                     account_id = getattr(item, 'accountID', None)
                     if account_id:
                         try:
-                            account = plex.myPlexAccount()
                             # Check if it's the owner
                             if hasattr(account, 'id') and account.id == account_id:
                                 account_name = account.title if hasattr(account, 'title') else account.username
+                                is_owner_user = True
                             else:
                                 # Check shared users
                                 for user in account.users():
@@ -343,8 +361,18 @@ async def sessions_get_media_playback_history(media_title: str = None, library_n
                         except Exception as e:
                             # If we can't get the account name, just use the ID
                             account_name = f"User ID: {account_id}"
-                
+
+                # Determine if this is the owner or a shared user (if not already determined by accountID)
+                if not is_owner_user and account_name != "Unknown User":
+                    # Compare with owner's username and title
+                    if (account_name.lower() == account.username.lower() or
+                        account_name.lower() == account.title.lower()):
+                        is_owner_user = True
+
+                user_role = "Owner" if is_owner_user else "Shared User"
+
                 history_entry["user"] = account_name
+                history_entry["user_role"] = user_role
                 
                 # Get the timestamp when it was viewed
                 viewed_at = getattr(item, 'viewedAt', None)
