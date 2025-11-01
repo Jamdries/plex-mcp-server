@@ -311,12 +311,12 @@ async def user_get_watch_history(username: str = PLEX_USERNAME, limit: int = 10,
         while len(filtered_items) < limit and attempt < max_attempts:
             attempt += 1
 
-            # For the main account owner
+            # Fetch history - for owner we need to fetch all and filter manually
+            # because the accountID parameter may not work correctly for the owner
             if username.lower() == account.username.lower():
-                # Filter by owner's account ID to get only their watch history
-                history_items = plex.history(maxresults=current_search_limit, accountID=account.id)
+                history_items = plex.history(maxresults=current_search_limit)
             else:
-                # For a different user, find them in shared users
+                # For a shared user, use accountID to filter history
                 target_user = None
                 for user in account.users():
                     if user.username.lower() == username.lower() or user.title.lower() == username.lower():
@@ -326,26 +326,63 @@ async def user_get_watch_history(username: str = PLEX_USERNAME, limit: int = 10,
                 if not target_user:
                     return json.dumps({"error": f"User '{username}' not found."})
 
-                # For a shared user, use accountID to filter history
                 history_items = plex.history(maxresults=current_search_limit, accountID=target_user.id)
-            
-            # Filter by content type and deduplicate
+
+            # Filter by content type, user (for owner), and deduplicate
             for item in history_items:
                 item_id = getattr(item, 'ratingKey', None)
-                
+
                 # Skip if we've already processed this item
                 if item_id and item_id in seen_item_ids:
                     continue
-                
+
+                # For owner, filter by checking if this item belongs to them
+                if username.lower() == account.username.lower():
+                    # Get the accountID or username from the history item
+                    item_account_id = getattr(item, 'accountID', None)
+                    item_username = None
+
+                    # Try to get username from various attributes
+                    if hasattr(item, 'username') and item.username:
+                        item_username = item.username
+                    elif hasattr(item, 'accountName') and item.accountName:
+                        item_username = item.accountName
+                    elif hasattr(item, 'user') and item.user:
+                        user_obj = item.user
+                        if hasattr(user_obj, 'title'):
+                            item_username = user_obj.title
+                        elif hasattr(user_obj, 'name'):
+                            item_username = user_obj.name
+                        elif hasattr(user_obj, 'username'):
+                            item_username = user_obj.username
+
+                    # Check if this item belongs to the owner
+                    is_owner_item = False
+
+                    # First try account ID matching
+                    if item_account_id and hasattr(account, 'id') and account.id == item_account_id:
+                        is_owner_item = True
+                    # Then try username matching
+                    elif item_username and (item_username.lower() == account.username.lower() or
+                                           item_username.lower() == account.title.lower()):
+                        is_owner_item = True
+                    # If no accountID or username, we can't determine ownership, skip it
+                    elif not item_account_id and not item_username:
+                        continue
+
+                    # Skip items that don't belong to the owner
+                    if not is_owner_item:
+                        continue
+
                 # Add to seen items
                 if item_id:
                     seen_item_ids.add(item_id)
-                
+
                 # Apply content type filter if specified
                 item_type = getattr(item, 'type', 'unknown')
                 if content_type and item_type.lower() != content_type.lower():
                     continue
-                
+
                 filtered_items.append(item)
                 
                 # Stop if we've reached the limit
