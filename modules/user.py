@@ -356,19 +356,50 @@ async def user_get_watch_history(username: str = PLEX_USERNAME, limit: int = 10,
                         elif hasattr(user_obj, 'username'):
                             item_username = user_obj.username
 
-                    # Check if this item belongs to the owner
-                    is_owner_item = False
+                    # Check if this item belongs to the owner or a shared user
+                    # Strategy: Include unless we can positively identify it belongs to a shared user
+                    is_owner_item = True  # Assume owner unless proven otherwise
 
-                    # First try account ID matching
-                    if item_account_id and hasattr(account, 'id') and account.id == item_account_id:
-                        is_owner_item = True
-                    # Then try username matching
-                    elif item_username and (item_username.lower() == account.username.lower() or
-                                           item_username.lower() == account.title.lower()):
-                        is_owner_item = True
-                    # If no accountID or username, we can't determine ownership, skip it
-                    elif not item_account_id and not item_username:
-                        continue
+                    # If we have an accountID, check if it matches the owner or a shared user
+                    if item_account_id:
+                        # Check if it matches the owner's account ID
+                        if hasattr(account, 'id') and account.id == item_account_id:
+                            is_owner_item = True
+                        else:
+                            # Check if it matches any shared user's ID
+                            matched_shared_user = False
+                            try:
+                                for user in account.users():
+                                    if (hasattr(user, 'id') and user.id == item_account_id) or \
+                                       (hasattr(user, 'accountID') and user.accountID == item_account_id):
+                                        matched_shared_user = True
+                                        is_owner_item = False
+                                        break
+                            except:
+                                pass
+
+                            # If accountID doesn't match owner or any shared user, might be owner with different ID format
+                            if not matched_shared_user:
+                                is_owner_item = True
+
+                    # If we have a username, verify it's not a shared user
+                    if item_username:
+                        # Check if username matches owner
+                        if item_username.lower() == account.username.lower() or \
+                           item_username.lower() == account.title.lower():
+                            is_owner_item = True
+                        else:
+                            # Check if it matches a shared user's username
+                            matched_shared_user = False
+                            try:
+                                for user in account.users():
+                                    if item_username.lower() == user.username.lower() or \
+                                       (hasattr(user, 'title') and item_username.lower() == user.title.lower()):
+                                        matched_shared_user = True
+                                        is_owner_item = False
+                                        break
+                            except:
+                                pass
 
                     # Skip items that don't belong to the owner
                     if not is_owner_item:
